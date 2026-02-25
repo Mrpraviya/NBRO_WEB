@@ -3,30 +3,23 @@ import PropTypes from "prop-types";
 export default function Step1General({ data, setData, next }) {
   return (
     <>
-      <h2 className="text-xl font-bold mb-4">1. General Information</h2>
+      <h2 className="text-2xl font-semibold mb-6">General Information</h2>
 
       <input
-        className="border p-2 w-full mb-4"
+        className="premium-input"
         placeholder="Applicant Name"
         value={data.applicantName}
-        onChange={(e) =>
-          setData({ ...data, applicantName: e.target.value })
-        }
+        onChange={(e) => setData({ ...data, applicantName: e.target.value })}
       />
 
       <input
         type="date"
-        className="border p-2 w-full mb-4"
+        className="premium-input mt-4"
         value={data.inspectionDate}
-        onChange={(e) =>
-          setData({ ...data, inspectionDate: e.target.value })
-        }
+        onChange={(e) => setData({ ...data, inspectionDate: e.target.value })}
       />
 
-      <button
-        onClick={next}
-        className="bg-blue-700 text-white px-6 py-2 rounded"
-      >
+      <button onClick={next} className="primary-btn mt-6">
         Next
       </button>
     </>
@@ -34,7 +27,7 @@ export default function Step1General({ data, setData, next }) {
 }
 
 Step1General.propTypes = {
-  data: PropTypes.object.isRequired,
-  setData: PropTypes.func.isRequired,
-  next: PropTypes.func.isRequired,
+  data: PropTypes.object,
+  setData: PropTypes.func,
+  next: PropTypes.func,
 };

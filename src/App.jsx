@@ -1,6 +1,7 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ReportWizard from "./pages/report/ReportWizard";
+import ReportsList from "./pages/ReportsList";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -34,6 +35,17 @@ function App() {
               <>
                 <Header />
                 <Dashboard />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <ReportsList />
               </>
             </ProtectedRoute>
           }
