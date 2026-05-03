@@ -22,4 +22,30 @@ public class ExternalServices {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    // Getters and Setters
+    public UUID getServiceId() { return serviceId; }
+    public void setServiceId(UUID serviceId) { this.serviceId = serviceId; }
+
+    public UUID getSiteId() { return siteId; }
+    public void setSiteId(UUID siteId) { this.siteId = siteId; }
+
+    public String getPipeBornWaterSupply() { return pipeBornWaterSupply; }
+    public void setPipeBornWaterSupply(String pipeBornWaterSupply) { 
+        this.pipeBornWaterSupply = pipeBornWaterSupply; 
+    }
+
+    public String getSewageWaste() { return sewageWaste; }
+    public void setSewageWaste(String sewageWaste) { this.sewageWaste = sewageWaste; }
+
+    public String getElectricitySource() { return electricitySource; }
+    public void setElectricitySource(String electricitySource) { 
+        this.electricitySource = electricitySource; 
+    }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

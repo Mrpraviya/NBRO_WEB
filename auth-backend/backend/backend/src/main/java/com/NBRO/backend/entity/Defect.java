@@ -19,4 +19,20 @@ public class Defect {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    // Getters and Setters
+    public UUID getDefectId() { return defectId; }
+    public void setDefectId(UUID defectId) { this.defectId = defectId; }
+
+    public UUID getSiteId() { return siteId; }
+    public void setSiteId(UUID siteId) { this.siteId = siteId; }
+
+    public String getSyncStatus() { return syncStatus; }
+    public void setSyncStatus(String syncStatus) { this.syncStatus = syncStatus; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
