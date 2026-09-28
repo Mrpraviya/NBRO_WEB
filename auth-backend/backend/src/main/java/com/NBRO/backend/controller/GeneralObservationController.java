@@ -17,12 +17,12 @@ public class GeneralObservationController {
     private GeneralObservationService service;
 
     @GetMapping("/site/{siteId}")
-    public List<GeneralObservation> getBySiteId(@PathVariable UUID siteId) {
+    public List<GeneralObservation> getBySiteId(@PathVariable @org.springframework.lang.NonNull UUID siteId) {
         return service.getBySiteId(siteId);
     }
 
     @GetMapping("/{id}")
-    public GeneralObservation getById(@PathVariable UUID id) {
+    public GeneralObservation getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

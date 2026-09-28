@@ -17,12 +17,12 @@ public class SpecificationController {
     private SpecificationService service;
 
     @GetMapping("/building/{buildingId}")
-    public List<Specification> getByBuildingId(@PathVariable UUID buildingId) {
+    public List<Specification> getByBuildingId(@PathVariable @org.springframework.lang.NonNull UUID buildingId) {
         return service.getByBuildingId(buildingId);
     }
 
     @GetMapping("/{id}")
-    public Specification getById(@PathVariable UUID id) {
+    public Specification getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

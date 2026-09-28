@@ -3,6 +3,7 @@ package com.NBRO.backend.service;
 import com.NBRO.backend.entity.MainBuilding;
 import com.NBRO.backend.repository.MainBuildingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class MainBuildingService {
         return repo.findBySiteId(siteId);
     }
 
-    public MainBuilding getById(UUID id) {
+    public MainBuilding getById(@NonNull UUID id) {
         return repo.findById(id).orElseThrow();
     }
 }

@@ -1,0 +1,357 @@
+-- NBRO schema (no FOREIGN KEY constraints)
+-- Run this in Supabase SQL Editor after taking a backup.
+
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- Profile table (no FK to auth.users here)
+CREATE TABLE IF NOT EXISTS profile (
+  id UUID PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'officer' CHECK (role IN ('admin', 'officer')),
+  is_active BOOLEAN DEFAULT true,
+  must_change_password BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Site table (no FK to profile)
+CREATE TABLE IF NOT EXISTS site (
+  site_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  owner_name TEXT,
+  owner_contact TEXT,
+  location GEOGRAPHY(POINT, 4326),
+  building_ref TEXT UNIQUE,
+  distance_from_row DOUBLE PRECISION,
+  address TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  building_photo_url TEXT,
+  building_photo_path TEXT,
+  sync_status TEXT DEFAULT 'pending' CHECK (sync_status IN ('pending', 'syncing', 'synced', 'error')),
+  sections_status JSONB DEFAULT '{"general_observation": false, "external_services": false, "main_building": false, "ancillary_building": false, "defects": false}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_by UUID,
+  CONSTRAINT fk_site_user FOREIGN KEY (user_id) REFERENCES profile(id),
+  CONSTRAINT fk_site_updated_by FOREIGN KEY (updated_by) REFERENCES profile(id)
+);
+
+-- General observation (no FK constraint)
+CREATE TABLE IF NOT EXISTS general_observation (
+  observation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id UUID NOT NULL,
+  type TEXT,
+  present_condition TEXT,
+  approx_age TEXT,
+  sync_status TEXT DEFAULT 'pending' CHECK (sync_status IN ('pending', 'syncing', 'synced', 'error')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- External services (no FK)
+CREATE TABLE IF NOT EXISTS external_services (
+  service_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id UUID NOT NULL,
+  pipe_born_water_supply TEXT,
+  sewage_waste TEXT,
+  electricity_source TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Ancillary building (no FK)
+CREATE TABLE IF NOT EXISTS ancillary_building (
+  structure_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id UUID NOT NULL,
+  building_type TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Detail type (no FK)
+CREATE TABLE IF NOT EXISTS detail_type (
+  detail_type_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  structure_id UUID NOT NULL,
+  name TEXT NOT NULL
+);
+
+-- Building detail (no FK)
+CREATE TABLE IF NOT EXISTS building_detail (
+  building_detail_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  detail_type_id UUID NOT NULL,
+  front BOOLEAN DEFAULT FALSE,
+  left_side BOOLEAN DEFAULT FALSE,
+  right_side BOOLEAN DEFAULT FALSE,
+  rear BOOLEAN DEFAULT FALSE
+);
+
+-- Main building (no FK)
+CREATE TABLE IF NOT EXISTS main_building (
+  building_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id UUID NOT NULL,
+  no_floors TEXT,
+  sync_status TEXT DEFAULT 'pending' CHECK (sync_status IN ('pending', 'syncing', 'synced', 'error')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Specification (no FK)
+CREATE TABLE IF NOT EXISTS specification (
+  spec_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  building_id UUID,
+  is_used BOOLEAN,
+  element_type TEXT,
+  element_properties JSONB,
+  floor_details JSONB
+);
+
+-- Defects (no FK)
+CREATE TABLE IF NOT EXISTS defects (
+  defect_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_id UUID,
+  sync_status TEXT DEFAULT 'pending' CHECK (sync_status IN ('pending', 'syncing', 'synced', 'error')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add missing columns to defects table
+ALTER TABLE IF EXISTS defects
+ADD COLUMN IF NOT EXISTS notation TEXT,
+ADD COLUMN IF NOT EXISTS defect_category TEXT,
+ADD COLUMN IF NOT EXISTS floor_level TEXT,
+ADD COLUMN IF NOT EXISTS location_description TEXT,
+ADD COLUMN IF NOT EXISTS length_mm NUMERIC,
+ADD COLUMN IF NOT EXISTS width_mm NUMERIC,
+ADD COLUMN IF NOT EXISTS photo_path TEXT,
+ADD COLUMN IF NOT EXISTS photo_url TEXT,
+ADD COLUMN IF NOT EXISTS remarks TEXT;
+
+-- Ensure all tables have UUID defaults (fixes "null value" errors if tables already existed without defaults)
+ALTER TABLE IF EXISTS site ALTER COLUMN site_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS general_observation ALTER COLUMN observation_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS external_services ALTER COLUMN service_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS ancillary_building ALTER COLUMN structure_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS main_building ALTER COLUMN building_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS defects ALTER COLUMN defect_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS defect_info ALTER COLUMN info_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS defect_image ALTER COLUMN image_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS detail_type ALTER COLUMN detail_type_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS building_detail ALTER COLUMN building_detail_id SET DEFAULT gen_random_uuid();
+ALTER TABLE IF EXISTS specification ALTER COLUMN spec_id SET DEFAULT gen_random_uuid();
+
+-- Defect info (no FK)
+CREATE TABLE IF NOT EXISTS defect_info (
+  info_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  defect_id UUID,
+  remarks TEXT,
+  length TEXT,
+  width TEXT
+);
+
+-- Defect image (no FK)
+CREATE TABLE IF NOT EXISTS defect_image (
+  image_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  info_id UUID,
+  image_url TEXT,
+  image_path TEXT,
+  sync_status TEXT DEFAULT 'pending' CHECK (sync_status IN ('pending', 'syncing', 'synced', 'error')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Optional legacy tables (if you have defect_media)
+CREATE TABLE IF NOT EXISTS defect_media (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  defect_id UUID,
+  building_reference_no TEXT,
+  storage_path TEXT NOT NULL,
+  storage_url TEXT,
+  file_name TEXT NOT NULL,
+  file_size INTEGER,
+  mime_type TEXT DEFAULT 'image/jpeg',
+  width_px INTEGER,
+  height_px INTEGER,
+  has_annotations BOOLEAN DEFAULT FALSE,
+  annotation_data JSONB,
+  uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+  uploaded_by UUID
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_site_user_id ON site(user_id);
+CREATE INDEX IF NOT EXISTS idx_general_observation_site_id ON general_observation(site_id);
+CREATE INDEX IF NOT EXISTS idx_external_services_site_id ON external_services(site_id);
+CREATE INDEX IF NOT EXISTS idx_ancillary_building_site_id ON ancillary_building(site_id);
+CREATE INDEX IF NOT EXISTS idx_detail_type_structure_id ON detail_type(structure_id);
+CREATE INDEX IF NOT EXISTS idx_building_detail_type_id ON building_detail(detail_type_id);
+CREATE INDEX IF NOT EXISTS idx_main_building_site_id ON main_building(site_id);
+CREATE INDEX IF NOT EXISTS idx_specification_building_id ON specification(building_id);
+CREATE INDEX IF NOT EXISTS idx_defects_site_id ON defects(site_id);
+CREATE INDEX IF NOT EXISTS idx_defect_info_defect_id ON defect_info(defect_id);
+CREATE INDEX IF NOT EXISTS idx_defect_image_info_id ON defect_image(info_id);
+CREATE INDEX IF NOT EXISTS idx_site_sync_status ON site(sync_status);
+CREATE INDEX IF NOT EXISTS idx_site_building_ref ON site(building_ref);
+CREATE INDEX IF NOT EXISTS idx_profile_role ON profile(role);
+CREATE INDEX IF NOT EXISTS idx_profile_is_active ON profile(is_active);
+CREATE INDEX IF NOT EXISTS idx_profile_must_change_password ON profile(must_change_password) WHERE must_change_password = true;
+
+-- Update timestamp trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE 'plpgsql';
+
+-- Attach triggers to tables
+DROP TRIGGER IF EXISTS update_site_updated_at ON site;
+CREATE TRIGGER update_site_updated_at
+BEFORE UPDATE ON site
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_general_observation_at ON general_observation;
+CREATE TRIGGER update_general_observation_at
+BEFORE UPDATE ON general_observation
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_profile_updated_at ON profile;
+CREATE TRIGGER update_profile_updated_at
+BEFORE UPDATE ON profile
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_ancillary_building_at ON ancillary_building;
+CREATE TRIGGER update_ancillary_building_at
+BEFORE UPDATE ON ancillary_building
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_external_services_at ON external_services;
+CREATE TRIGGER update_external_services_at
+BEFORE UPDATE ON external_services
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_main_building_at ON main_building;
+CREATE TRIGGER update_main_building_at
+BEFORE UPDATE ON main_building
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_defects_at ON defects;
+CREATE TRIGGER update_defects_at
+BEFORE UPDATE ON defects
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_defect_image_at ON defect_image;
+CREATE TRIGGER update_defect_image_at
+BEFORE UPDATE ON defect_image
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+
+CREATE TABLE IF NOT EXISTS notices (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('urgent', 'high', 'normal', 'low')),
+    target_type TEXT NOT NULL DEFAULT 'all' CHECK (target_type IN ('all', 'individual', 'selected')),
+    published_by UUID REFERENCES profile(id) ON DELETE SET NULL,
+    published_by_name TEXT,
+    published_by_avatar_url TEXT,
+    published_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notices_published_at ON notices(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notices_priority ON notices(priority);
+CREATE INDEX IF NOT EXISTS idx_notices_target_type ON notices(target_type);
+CREATE INDEX IF NOT EXISTS idx_notices_published_by ON notices(published_by);
+
+CREATE TABLE IF NOT EXISTS notice_recipients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    notice_id UUID NOT NULL REFERENCES notices(id) ON DELETE CASCADE,
+    officer_id UUID NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    read_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (notice_id, officer_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_notice_recipients_notice_id ON notice_recipients(notice_id);
+CREATE INDEX IF NOT EXISTS idx_notice_recipients_officer_id ON notice_recipients(officer_id);
+CREATE INDEX IF NOT EXISTS idx_notice_recipients_is_read ON notice_recipients(is_read);
+
+DROP TRIGGER IF EXISTS update_notices_updated_at ON notices;
+CREATE TRIGGER update_notices_updated_at
+    BEFORE UPDATE ON notices
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE notices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notice_recipients ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY notices_admin_all ON notices FOR ALL
+       USING(public.is_admin())
+       WITH CHECK (public.is_admin());
+
+CREATE POLICY notices_officer_read ON notices FOR ALL
+        USING(
+            target_type = 'all'
+            OR EXISTS(
+                SELECT 1 FROM notice_recipients nr
+                WHERE nr.notice_id = notices.id
+                AND nr.officer_id = auth.uid()
+            )
+);
+
+CREATE POLICY notice_recipients_admin_all ON notice_recipients FOR ALL
+      USING(public.is_admin())
+      WITH CHECK (public.is_admin());
+
+CREATE POLICY notice_recipients_officer_read ON notice_recipients FOR SELECT
+       USING (officer_id = auth.uid());
+
+CREATE POLICY notice_recipients_officer_update ON notice_recipients FOR UPDATE
+    USING (officer_id = auth.uid())
+    WITH CHECK (officer_id = auth.uid());
+
+ALTER TABLE ancillary_building
+ADD CONSTRAINT fk_ancillary_building_site
+FOREIGN KEY (site_id)
+REFERENCES site(site_id)
+ON DELETE CASCADE;
+
+
+ALTER TABLE detail_type
+ADD CONSTRAINT fk_detail_type_structure
+FOREIGN KEY (structure_id)
+REFERENCES ancillary_building(structure_id)
+ON DELETE CASCADE;
+
+ALTER TABLE building_detail
+ADD CONSTRAINT fk_building_detail_type
+FOREIGN KEY (detail_type_id)
+REFERENCES detail_type(detail_type_id)
+ON DELETE CASCADE;
+
+ALTER TABLE defect_info
+ADD CONSTRAINT fk_defect_info_defect
+FOREIGN KEY (defect_id)
+REFERENCES defects(defect_id)
+ON DELETE CASCADE;
+
+ALTER TABLE defect_image
+ADD CONSTRAINT fk_defect_image_info
+FOREIGN KEY (info_id)
+REFERENCES defect_info(info_id)
+ON DELETE CASCADE;
+

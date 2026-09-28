@@ -3,6 +3,7 @@ package com.NBRO.backend.service;
 import com.NBRO.backend.entity.Defect;
 import com.NBRO.backend.repository.DefectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class DefectService {
         return repo.findBySiteId(siteId);
     }
 
-    public Defect getById(UUID id) {
+    public Defect getById(@NonNull UUID id) {
         return repo.findById(id).orElseThrow();
     }
 }

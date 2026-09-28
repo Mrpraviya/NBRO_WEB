@@ -17,12 +17,12 @@ public class DefectInfoController {
     private DefectInfoService service;
 
     @GetMapping("/defect/{defectId}")
-    public List<DefectInfo> getByDefectId(@PathVariable UUID defectId) {
+    public List<DefectInfo> getByDefectId(@PathVariable @org.springframework.lang.NonNull UUID defectId) {
         return service.getByDefectId(defectId);
     }
 
     @GetMapping("/{id}")
-    public DefectInfo getById(@PathVariable UUID id) {
+    public DefectInfo getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

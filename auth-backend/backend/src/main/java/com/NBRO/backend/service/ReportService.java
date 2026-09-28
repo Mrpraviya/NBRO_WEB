@@ -8,6 +8,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -67,19 +68,28 @@ public class ReportService {
     /**
      * Create an analysis order and generate PDF report
      */
-    public Analysis createAnalysisOrder(ReportRequest request) throws IOException {
+    public Analysis createAnalysisOrder(@NonNull ReportRequest request) throws IOException {
+        UUID siteId = requireUuid(request.getSiteId(), "siteId");
+        UUID userId = requireUuid(request.getUserId(), "userId");
+        String reportTitle = request.getReportTitle();
+        if (reportTitle == null) {
+            reportTitle = "Analysis Report - " + siteId;
+        }
+
         // Create Analysis record
         Analysis analysis = new Analysis();
-        analysis.setAnalysisId(UUID.randomUUID());
-        analysis.setSiteId(request.getSiteId());
-        analysis.setUserId(request.getUserId());
-        analysis.setReportTitle(request.getReportTitle() != null ? 
-            request.getReportTitle() : "Analysis Report - " + request.getSiteId());
+        analysis.setSiteId(siteId);
+        analysis.setUserId(userId);
+        analysis.setReportTitle(reportTitle);
         analysis.setNotes(request.getNotes());
         analysis.setStatus("PENDING");
 
+        // Persist before using the generated ID in the PDF filename.
+        analysis = analysisRepository.saveAndFlush(analysis);
+        UUID analysisId = requireUuid(analysis.getAnalysisId(), "analysisId");
+
         // Generate PDF
-        String pdfPath = generatePDF(request.getSiteId(), analysis.getAnalysisId(), analysis.getReportTitle());
+        String pdfPath = generatePDF(siteId, analysisId, reportTitle);
         
         analysis.setPdfPath(pdfPath);
         analysis.setStatus("GENERATED");
@@ -91,7 +101,7 @@ public class ReportService {
     /**
      * Generate PDF report from site data
      */
-    private String generatePDF(UUID siteId, UUID analysisId, String reportTitle) throws IOException {
+    private String generatePDF(@NonNull UUID siteId, @NonNull UUID analysisId, @NonNull String reportTitle) throws IOException {
         // Fetch site data
         Site site = siteRepository.findById(siteId)
             .orElseThrow(() -> new IllegalArgumentException("Site not found: " + siteId));
@@ -361,21 +371,29 @@ public class ReportService {
     /**
      * Get analysis by ID
      */
-    public Optional<Analysis> getAnalysisById(UUID analysisId) {
+    public Optional<Analysis> getAnalysisById(@NonNull UUID analysisId) {
         return analysisRepository.findById(analysisId);
     }
 
     /**
      * Get all analyses for a site
      */
-    public List<Analysis> getAnalysesBySite(UUID siteId) {
+    public List<Analysis> getAnalysesBySite(@NonNull UUID siteId) {
         return analysisRepository.findBySiteId(siteId);
     }
 
     /**
      * Get all analyses for a user
      */
-    public List<Analysis> getAnalysesByUser(UUID userId) {
+    public List<Analysis> getAnalysesByUser(@NonNull UUID userId) {
         return analysisRepository.findByUserId(userId);
+    }
+
+    @NonNull
+    private UUID requireUuid(UUID value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        return value;
     }
 }

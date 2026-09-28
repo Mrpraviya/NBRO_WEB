@@ -17,12 +17,12 @@ public class DetailTypeController {
     private DetailTypeService service;
 
     @GetMapping("/structure/{structureId}")
-    public List<DetailType> getByStructureId(@PathVariable UUID structureId) {
+    public List<DetailType> getByStructureId(@PathVariable @org.springframework.lang.NonNull UUID structureId) {
         return service.getByStructureId(structureId);
     }
 
     @GetMapping("/{id}")
-    public DetailType getById(@PathVariable UUID id) {
+    public DetailType getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

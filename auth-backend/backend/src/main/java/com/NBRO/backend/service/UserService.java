@@ -36,7 +36,6 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(password));
         user.setVerified(false);
 
-        // Generate OTP
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
         user.setOtp(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));

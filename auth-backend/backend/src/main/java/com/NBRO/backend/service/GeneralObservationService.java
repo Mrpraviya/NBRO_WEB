@@ -3,6 +3,7 @@ package com.NBRO.backend.service;
 import com.NBRO.backend.entity.GeneralObservation;
 import com.NBRO.backend.repository.GeneralObservationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class GeneralObservationService {
         return repo.findBySiteId(siteId);
     }
 
-    public GeneralObservation getById(UUID id) {
+    public GeneralObservation getById(@NonNull UUID id) {
         return repo.findById(id).orElseThrow();
     }
 }

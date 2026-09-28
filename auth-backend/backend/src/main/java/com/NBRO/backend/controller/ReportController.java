@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -41,7 +42,7 @@ public class ReportController {
      * }
      */
     @PostMapping("/generate")
-    public ResponseEntity<ReportResponse> generateReport(@RequestBody ReportRequest request) {
+    public ResponseEntity<ReportResponse> generateReport(@RequestBody @NonNull ReportRequest request) {
         try {
             if (request.getSiteId() == null || request.getUserId() == null) {
                 ReportResponse error = new ReportResponse();
@@ -83,7 +84,7 @@ public class ReportController {
      * GET /api/reports/{analysisId}/download
      */
     @GetMapping("/{analysisId}/download")
-    public ResponseEntity<Resource> downloadReport(@PathVariable UUID analysisId) {
+    public ResponseEntity<Resource> downloadReport(@PathVariable @NonNull UUID analysisId) {
         try {
             Optional<Analysis> analysis = reportService.getAnalysisById(analysisId);
 
@@ -101,7 +102,7 @@ public class ReportController {
             Resource resource = new FileSystemResource(file);
 
             return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentType(MediaType.parseMediaType("application/pdf"))
                     .header(HttpHeaders.CONTENT_DISPOSITION, 
                         "attachment; filename=\"" + file.getName() + "\"")
                     .body(resource);
@@ -116,7 +117,7 @@ public class ReportController {
      * GET /api/reports/{analysisId}
      */
     @GetMapping("/{analysisId}")
-    public ResponseEntity<ReportResponse> getReport(@PathVariable UUID analysisId) {
+    public ResponseEntity<ReportResponse> getReport(@PathVariable @NonNull UUID analysisId) {
         try {
             Optional<Analysis> analysis = reportService.getAnalysisById(analysisId);
 
@@ -137,7 +138,7 @@ public class ReportController {
      * GET /api/reports/site/{siteId}
      */
     @GetMapping("/site/{siteId}")
-    public ResponseEntity<List<ReportResponse>> getReportsBySite(@PathVariable UUID siteId) {
+    public ResponseEntity<List<ReportResponse>> getReportsBySite(@PathVariable @NonNull UUID siteId) {
         try {
             List<Analysis> analyses = reportService.getAnalysesBySite(siteId);
             List<ReportResponse> responses = analyses.stream()
@@ -155,7 +156,7 @@ public class ReportController {
      * GET /api/reports/user/{userId}
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ReportResponse>> getReportsByUser(@PathVariable UUID userId) {
+    public ResponseEntity<List<ReportResponse>> getReportsByUser(@PathVariable @NonNull UUID userId) {
         try {
             List<Analysis> analyses = reportService.getAnalysesByUser(userId);
             List<ReportResponse> responses = analyses.stream()

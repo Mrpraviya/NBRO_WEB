@@ -9,7 +9,7 @@ import java.util.UUID;
 public class Analysis {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "analysis_id")
     private UUID analysisId;
 
@@ -19,13 +19,13 @@ public class Analysis {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "report_title")
+    @Column(name = "report_title", length = 255)
     private String reportTitle;
 
-    @Column(name = "status")
+    @Column(name = "status", length = 50)
     private String status; // PENDING, GENERATED, SENT, etc.
 
-    @Column(name = "pdf_path")
+    @Column(name = "pdf_path", length = 500)
     private String pdfPath;
 
     @Column(name = "notes", columnDefinition = "TEXT")

@@ -14,15 +14,15 @@ A new `Analysis` entity has been created to track all report generation requests
 
 ```sql
 CREATE TABLE analysis (
-  analysis_id UUID PRIMARY KEY,
+  analysis_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   site_id UUID NOT NULL,
   user_id UUID NOT NULL,
   report_title VARCHAR(255),
   status VARCHAR(50),
   pdf_path VARCHAR(500),
   notes TEXT,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
 );
 ```
 

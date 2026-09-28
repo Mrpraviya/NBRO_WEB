@@ -22,7 +22,7 @@ public class ProfileController {
     }
 
     @GetMapping("/{id}")
-    public Profile getById(@PathVariable UUID id) {
+    public Profile getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

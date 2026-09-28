@@ -3,11 +3,13 @@ package com.NBRO.backend.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.DynamicInsert;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
+@DynamicInsert
 @Table(name = "profile")
 public class Profile {
 

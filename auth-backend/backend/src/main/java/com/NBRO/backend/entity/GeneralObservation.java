@@ -1,17 +1,22 @@
 package com.NBRO.backend.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.DynamicInsert;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
+@DynamicInsert
 @Table(name = "general_observation")
 public class GeneralObservation {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID observationId;
 
     private UUID siteId;

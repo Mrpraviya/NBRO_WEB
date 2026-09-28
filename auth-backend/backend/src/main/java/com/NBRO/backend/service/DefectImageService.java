@@ -3,6 +3,7 @@ package com.NBRO.backend.service;
 import com.NBRO.backend.entity.DefectImage;
 import com.NBRO.backend.repository.DefectImageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class DefectImageService {
         return repo.findByInfoId(infoId);
     }
 
-    public DefectImage getById(UUID id) {
+    public DefectImage getById(@NonNull UUID id) {
         return repo.findById(id).orElseThrow();
     }
 }

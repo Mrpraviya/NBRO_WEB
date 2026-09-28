@@ -17,12 +17,12 @@ public class ExternalServicesController {
     private ExternalServicesService service;
 
     @GetMapping("/site/{siteId}")
-    public List<ExternalServices> getBySiteId(@PathVariable UUID siteId) {
+    public List<ExternalServices> getBySiteId(@PathVariable @org.springframework.lang.NonNull UUID siteId) {
         return service.getBySiteId(siteId);
     }
 
     @GetMapping("/{id}")
-    public ExternalServices getById(@PathVariable UUID id) {
+    public ExternalServices getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

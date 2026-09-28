@@ -17,12 +17,12 @@ public class DefectController {
     private DefectService service;
 
     @GetMapping("/site/{siteId}")
-    public List<Defect> getBySiteId(@PathVariable UUID siteId) {
+    public List<Defect> getBySiteId(@PathVariable @org.springframework.lang.NonNull UUID siteId) {
         return service.getBySiteId(siteId);
     }
 
     @GetMapping("/{id}")
-    public Defect getById(@PathVariable UUID id) {
+    public Defect getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

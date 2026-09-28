@@ -22,12 +22,12 @@ public class SiteController {
     }
 
     @GetMapping("/{id}")
-    public Site getById(@PathVariable UUID id) {
+    public Site getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 
     @GetMapping("/user/{userId}")
-    public List<Site> getByUserId(@PathVariable UUID userId) {
+    public List<Site> getByUserId(@PathVariable @org.springframework.lang.NonNull UUID userId) {
         return service.getByUser(userId);
     }
 }

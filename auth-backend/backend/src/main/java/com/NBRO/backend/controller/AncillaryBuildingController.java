@@ -17,12 +17,12 @@ public class AncillaryBuildingController {
     private AncillaryBuildingService service;
 
     @GetMapping("/site/{siteId}")
-    public List<AncillaryBuilding> getBySiteId(@PathVariable UUID siteId) {
+    public List<AncillaryBuilding> getBySiteId(@PathVariable @org.springframework.lang.NonNull UUID siteId) {
         return service.getBySiteId(siteId);
     }
 
     @GetMapping("/{id}")
-    public AncillaryBuilding getById(@PathVariable UUID id) {
+    public AncillaryBuilding getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

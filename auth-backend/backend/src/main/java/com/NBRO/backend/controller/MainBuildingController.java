@@ -17,12 +17,12 @@ public class MainBuildingController {
     private MainBuildingService service;
 
     @GetMapping("/site/{siteId}")
-    public List<MainBuilding> getBySiteId(@PathVariable UUID siteId) {
+    public List<MainBuilding> getBySiteId(@PathVariable @org.springframework.lang.NonNull UUID siteId) {
         return service.getBySiteId(siteId);
     }
 
     @GetMapping("/{id}")
-    public MainBuilding getById(@PathVariable UUID id) {
+    public MainBuilding getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

@@ -17,12 +17,12 @@ public class BuildingDetailController {
     private BuildingDetailService service;
 
     @GetMapping("/detail-type/{detailTypeId}")
-    public List<BuildingDetail> getByDetailTypeId(@PathVariable UUID detailTypeId) {
+    public List<BuildingDetail> getByDetailTypeId(@PathVariable @org.springframework.lang.NonNull UUID detailTypeId) {
         return service.getByDetailTypeId(detailTypeId);
     }
 
     @GetMapping("/{id}")
-    public BuildingDetail getById(@PathVariable UUID id) {
+    public BuildingDetail getById(@PathVariable @org.springframework.lang.NonNull UUID id) {
         return service.getById(id);
     }
 }

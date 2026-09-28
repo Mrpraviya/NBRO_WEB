@@ -3,6 +3,7 @@ package com.NBRO.backend.service;
 import com.NBRO.backend.entity.ExternalServices;
 import com.NBRO.backend.repository.ExternalServicesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class ExternalServicesService {
         return repo.findBySiteId(siteId);
     }
 
-    public ExternalServices getById(UUID id) {
+    public ExternalServices getById(@NonNull UUID id) {
         return repo.findById(id).orElseThrow();
     }
 }
