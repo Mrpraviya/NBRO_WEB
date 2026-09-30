@@ -77,14 +77,16 @@ export default function Header() {
         {/* Brand */}
         <NavLink
           to="/dashboard"
-          className="flex shrink-0 items-center gap-5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/60"
+          className="flex shrink-0 items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/60"
           aria-label="NBRO home"
         >
-          <img
-            src="/images/logo.png"
-            alt="NBRO Logo"
-            className="h-12 w-auto max-w-[220px] object-contain object-left sm:h-14 sm:max-w-[280px] lg:max-w-[320px]"
-          />
+          <div className="flex items-center justify-center rounded-xl bg-white px-4 py-2 shadow-[0_4px_18px_rgba(0,0,0,0.35)] ring-1 ring-white/20">
+            <img
+              src="/images/logo.png"
+              alt="NBRO Logo"
+              className="h-10 w-auto max-w-[200px] object-contain sm:h-11 sm:max-w-[260px] lg:max-w-[300px]"
+            />
+          </div>
         </NavLink>
 
         {/* Desktop navigation */}
