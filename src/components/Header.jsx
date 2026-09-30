@@ -48,6 +48,7 @@ export default function Header() {
 
   const logout = () => {
     localStorage.removeItem("isAuth");
+    localStorage.removeItem("currentUser");
     navigate("/");
   };
 

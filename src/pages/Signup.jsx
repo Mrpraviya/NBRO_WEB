@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../utils/auth";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -9,19 +10,23 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSignup = () => {
-    if (!name || !email || !password) {
+  const handleSignup = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || !trimmedEmail || !password) {
       setError("All fields are required");
       return;
     }
 
-    if (!email.includes("@")) {
-      setError("Invalid email address");
-      return;
-    }
+    const result = await registerUser({
+      name: trimmedName,
+      email: trimmedEmail,
+      password,
+    });
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
 

@@ -5,6 +5,8 @@ import ReportsList from "./pages/ReportsList";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 // import ReportForm from "./pages/ReportForm";
 import Header from "./components/Header";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -22,6 +24,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route
           path="/report"
