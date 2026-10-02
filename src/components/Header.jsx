@@ -6,8 +6,7 @@ const navItems = [
   { label: "Sites", path: "/sites" },
   { label: "Profiles", path: "/profiles" },
   { label: "Notices", path: "/notices" },
-  { label: "Defects", path: "/defects" },
-  { label: "Inspection", path: "/inspection" },
+  { label: "Data browser", path: "/database-tables" },
 ];
 
 const LogoutIcon = () => (

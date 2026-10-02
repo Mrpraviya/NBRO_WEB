@@ -1,6 +1,7 @@
 package com.NBRO.backend.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -83,6 +84,7 @@ public class Site {
     public String getOwnerContact() { return ownerContact; }
     public void setOwnerContact(String ownerContact) { this.ownerContact = ownerContact; }
 
+    @JsonIgnore
     public Point getLocation() { return location; }
     public void setLocation(Point location) { this.location = location; }
 

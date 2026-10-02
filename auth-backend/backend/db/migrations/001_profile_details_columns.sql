@@ -1,0 +1,6 @@
+ALTER TABLE public.profile
+  ADD COLUMN IF NOT EXISTS phone_number TEXT,
+  ADD COLUMN IF NOT EXISTS position_title TEXT,
+  ADD COLUMN IF NOT EXISTS employee_id TEXT,
+  ADD COLUMN IF NOT EXISTS work_role TEXT,
+  ADD COLUMN IF NOT EXISTS avatar_url TEXT;

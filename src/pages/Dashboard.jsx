@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { apiRequest } from "../utils/api";
 import {
   BarChart,
   Bar,
@@ -13,26 +14,22 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const RISK_COLORS = {
-  Low: "#10b981",
-  Moderate: "#f59e0b",
-  High: "#ef4444",
-  Critical: "#991b1b",
+const STATUS_COLORS = {
+  GENERATED: "#10b981",
+  PENDING: "#f59e0b",
+  FAILED: "#ef4444",
 };
-
-const backendPort = import.meta.env.VITE_BACKEND_PORT || "4000";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [riskData, setRiskData] = useState([]);
-  const [districtData, setDistrictData] = useState([]);
+  const [statusData, setStatusData] = useState([]);
+  const [siteReportData, setSiteReportData] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
-    highRisk: 0,
-    avgObservations: 0,
+    generated: 0,
+    pending: 0,
     completion: 0,
   });
 
@@ -43,14 +40,21 @@ export default function Dashboard() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:${backendPort}/api/reports`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error("Failed to fetch reports");
-      const data = await response.json();
-      setReports(data);
-      processReportData(data);
+      const sitesResponse = await apiRequest("/sites");
+      const sites = Array.isArray(sitesResponse) ? sitesResponse : [];
+      const reportsBySite = await Promise.all(sites.map(async (site) => {
+        const siteId = site.siteId ?? site.site_id;
+        if (!siteId) return [];
+
+        const siteReports = await apiRequest(`/reports/site/${encodeURIComponent(siteId)}`);
+        const siteName = site.ownerName ?? site.owner_name ?? site.buildingRef ?? site.building_ref ?? "Unknown site";
+        return (Array.isArray(siteReports) ? siteReports : []).map((report) => ({
+          ...report,
+          siteName,
+        }));
+      }));
+      const allReports = reportsBySite.flat();
+      processReportData(allReports);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -62,51 +66,42 @@ export default function Dashboard() {
 
   const processReportData = (reportList) => {
     if (!reportList || reportList.length === 0) {
-      setRiskData([]);
-      setDistrictData([]);
-      setStats({ total: 0, highRisk: 0, avgObservations: 0, completion: 0 });
+      setStatusData([]);
+      setSiteReportData([]);
+      setStats({ total: 0, generated: 0, pending: 0, completion: 0 });
       return;
     }
 
-    const riskCounts = { Low: 0, Moderate: 0, High: 0, Critical: 0 };
-    const districtCounts = {};
-    let highRiskCount = 0;
-    let totalObservations = 0;
+    const statusCounts = {};
+    const siteCounts = {};
+    let generatedCount = 0;
+    let pendingCount = 0;
 
     reportList.forEach((report) => {
-      const risk = report.riskLevel || "Low";
-      riskCounts[risk] = (riskCounts[risk] || 0) + 1;
+      const status = String(report.status || "UNKNOWN").toUpperCase();
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+      if (status === "GENERATED") generatedCount++;
+      if (status === "PENDING") pendingCount++;
 
-      if (risk === "High" || risk === "Critical") {
-        highRiskCount++;
-      }
-
-      const district = report.district || "Unknown";
-      districtCounts[district] = (districtCounts[district] || 0) + 1;
-
-      if (report.observations) {
-        totalObservations += report.observations.split(",").length;
-      }
+      const site = report.siteName || "Unknown site";
+      siteCounts[site] = (siteCounts[site] || 0) + 1;
     });
 
-    const riskChartData = Object.entries(riskCounts)
-      .filter(([, count]) => count > 0)
-      .map(([level, count]) => ({ name: level, value: count }));
+    const reportStatusData = Object.entries(statusCounts)
+      .map(([name, value]) => ({ name, value }));
 
-    const districtChartData = Object.entries(districtCounts)
+    const reportsBySiteData = Object.entries(siteCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
-      .map(([district, count]) => ({ name: district, count }));
+      .map(([name, count]) => ({ name, count }));
 
-    setRiskData(riskChartData);
-    setDistrictData(districtChartData);
+    setStatusData(reportStatusData);
+    setSiteReportData(reportsBySiteData);
     setStats({
       total: reportList.length,
-      highRisk: highRiskCount,
-      avgObservations: reportList.length > 0 ? Math.round(totalObservations / reportList.length) : 0,
-      completion: Math.round(
-        ((reportList.length - (reportList.filter((r) => !r.createdAt).length || 0)) / reportList.length) * 100,
-      ),
+      generated: generatedCount,
+      pending: pendingCount,
+      completion: Math.round((generatedCount / reportList.length) * 100),
     });
   };
 
@@ -165,16 +160,16 @@ export default function Dashboard() {
                   card: "bg-blue-50",
                 },
                 {
-                  label: "High Risk",
-                  value: stats.highRisk,
+                  label: "Generated Reports",
+                  value: stats.generated,
                   tone: "from-red-500 to-rose-400",
                   icon: "M12 9v2m0 4v2m0 4v2M6.343 3.665c.886-.887 2.318-.887 3.536 0l9.172 9.172c.886.886.886 2.318 0 3.536l-9.172 9.172c-.886.886-2.318.886-3.536 0l-9.172-9.172c-.886-.886-.886-2.318 0-3.536l9.172-9.172z",
                   text: "text-red-600",
                   card: "bg-red-50",
                 },
                 {
-                  label: "Avg Observations",
-                  value: stats.avgObservations,
+                  label: "Pending Reports",
+                  value: stats.pending,
                   tone: "from-amber-500 to-orange-400",
                   icon: "M13 10V3L4 14h7v7l9-11h-7z",
                   text: "text-amber-600",
@@ -207,12 +202,12 @@ export default function Dashboard() {
 
             <div className="mb-8 grid gap-6 xl:grid-cols-2">
               <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                <h3 className="mb-4 text-xl font-bold text-slate-900">Risk Level Distribution</h3>
-                {riskData.length > 0 ? (
+                <h3 className="mb-4 text-xl font-bold text-slate-900">Report Status</h3>
+                {statusData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={riskData}
+                        data={statusData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -220,8 +215,8 @@ export default function Dashboard() {
                         outerRadius={88}
                         dataKey="value"
                       >
-                        {riskData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={RISK_COLORS[entry.name] || "#888"} />
+                        {statusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || "#64748b"} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -233,10 +228,10 @@ export default function Dashboard() {
               </div>
 
               <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                <h3 className="mb-4 text-xl font-bold text-slate-900">Top Districts</h3>
-                {districtData.length > 0 ? (
+                <h3 className="mb-4 text-xl font-bold text-slate-900">Reports by Site</h3>
+                {siteReportData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={districtData}>
+                    <BarChart data={siteReportData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" angle={-35} textAnchor="end" height={72} tick={{ fill: "#475569", fontSize: 12 }} />
                       <YAxis tick={{ fill: "#475569", fontSize: 12 }} />
@@ -263,9 +258,9 @@ export default function Dashboard() {
                 },
                 {
                   title: "View All Database Tables",
-                  description: "Browse every row from the inspection schema tables in one place.",
+                  description: "Browse inspection records through the backend APIs.",
                   button: "View Tables",
-                  route: "/reports",
+                  route: "/database-tables",
                   gradient: "from-violet-600 to-pink-500",
                   icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
                   shadow: "shadow-violet-500/20",

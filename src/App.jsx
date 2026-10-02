@@ -1,7 +1,8 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ReportWizard from "./pages/report/ReportWizard";
-import ReportsList from "./pages/ReportsList";
+import DatabaseTables from "./pages/DatabaseTables";
+import GeneratedReports from "./pages/GeneratedReports";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -14,8 +15,6 @@ import Dashboard from "./pages/Dashboard";
 import SiteManagement from "./pages/SiteManagement";
 import ProfileManagement from "./pages/ProfileManagement";
 import NoticesPage from "./pages/NoticesPage";
-import DefectsPage from "./pages/DefectsPage";
-import InspectionRecordsPage from "./pages/InspectionRecordsPage";
 import { SiteCrudPage, ProfileCrudPage, NoticeCrudPage, DefectCrudPage, InspectionCrudPage } from "./pages/CrudWrappers";
 
 function App() {
@@ -66,7 +65,7 @@ function App() {
             <ProtectedRoute>
               <>
                 <Header />
-                <SiteCrudPage />
+                <SiteManagement />
               </>
             </ProtectedRoute>
           }
@@ -99,7 +98,7 @@ function App() {
             <ProtectedRoute>
               <>
                 <Header />
-                <ProfileCrudPage />
+                <ProfileManagement />
               </>
             </ProtectedRoute>
           }
@@ -132,7 +131,7 @@ function App() {
             <ProtectedRoute>
               <>
                 <Header />
-                <NoticeCrudPage />
+                <NoticesPage />
               </>
             </ProtectedRoute>
           }
@@ -231,7 +230,18 @@ function App() {
             <ProtectedRoute>
               <>
                 <Header />
-                <ReportsList />
+                <GeneratedReports />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/database-tables"
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <DatabaseTables />
               </>
             </ProtectedRoute>
           }

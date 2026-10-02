@@ -1,57 +1,41 @@
-const sites = [
-  {
-    site_id: "f5c7d8bb-6e1a-4d5b-8fa2-37c9a3a6d01e",
-    owner_name: "Amina Yusuf",
-    address: "12 Harbour Road, Lagos",
-    building_ref: "NBRO-001",
-    latitude: 6.5244,
-    longitude: 3.3792,
-    sync_status: "synced",
-    sections_status: {
-      general_observation: true,
-      external_services: true,
-      main_building: true,
-      ancillary_building: false,
-      defects: true,
-    },
-  },
-  {
-    site_id: "85d7203d-8d8d-4cb2-9f45-c1f4434b4eb0",
-    owner_name: "John Okafor",
-    address: "88 River Avenue, Abuja",
-    building_ref: "NBRO-025",
-    latitude: 9.0765,
-    longitude: 7.3986,
-    sync_status: "syncing",
-    sections_status: {
-      general_observation: true,
-      external_services: false,
-      main_building: true,
-      ancillary_building: true,
-      defects: false,
-    },
-  },
-  {
-    site_id: "2f32e118-5e93-441d-a756-0d4f3f880f14",
-    owner_name: "Grace Bello",
-    address: "14 Green Valley, Kaduna",
-    building_ref: "NBRO-047",
-    latitude: 10.5222,
-    longitude: 7.4383,
-    sync_status: "pending",
-    sections_status: {
-      general_observation: false,
-      external_services: false,
-      main_building: false,
-      ancillary_building: false,
-      defects: false,
-    },
-  },
-];
+import { useEffect, useState } from "react";
+import { apiRequest } from "../utils/api";
 
 export default function SiteManagement() {
-  const syncedSites = sites.filter((site) => site.sync_status === "synced").length;
-  const pendingSites = sites.filter((site) => site.sync_status === "pending").length;
+  const [sites, setSites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    apiRequest("/sites")
+      .then((data) => {
+        if (!isCurrent) return;
+        const records = Array.isArray(data) ? data : [];
+        setSites(records.map((site) => ({
+          ...site,
+          siteId: site.siteId ?? site.site_id,
+          ownerName: site.ownerName ?? site.owner_name,
+          buildingRef: site.buildingRef ?? site.building_ref,
+          syncStatus: site.syncStatus ?? site.sync_status ?? "unknown",
+          sectionsStatus: site.sectionsStatus ?? site.sections_status ?? {},
+        })));
+      })
+      .catch((requestError) => {
+        if (isCurrent) setError(requestError.message || "Unable to load sites.");
+      })
+      .finally(() => {
+        if (isCurrent) setLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
+
+  const syncedSites = sites.filter((site) => site.syncStatus === "synced").length;
+  const pendingSites = sites.filter((site) => site.syncStatus === "pending").length;
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8">
@@ -78,6 +62,12 @@ export default function SiteManagement() {
           </div>
         </div>
 
+        {error && (
+          <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Unable to load sites: {error}
+          </div>
+        )}
+
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
             <h2 className="text-xl font-semibold text-slate-900">Inspection sites</h2>
@@ -95,26 +85,30 @@ export default function SiteManagement() {
                 </tr>
               </thead>
               <tbody>
-                {sites.map((site) => (
-                  <tr key={site.site_id} className="border-t border-slate-200 hover:bg-slate-50">
-                    <td className="px-6 py-4 font-medium text-slate-900">{site.owner_name}</td>
-                    <td className="px-6 py-4">{site.building_ref}</td>
-                    <td className="px-6 py-4">{site.address}</td>
-                    <td className="px-6 py-4">{site.latitude}, {site.longitude}</td>
+                {loading ? (
+                  <tr><td colSpan="6" className="px-6 py-10 text-center text-slate-500">Loading sites...</td></tr>
+                ) : sites.length === 0 ? (
+                  <tr><td colSpan="6" className="px-6 py-10 text-center text-slate-500">No sites found.</td></tr>
+                ) : sites.map((site) => (
+                  <tr key={site.siteId} className="border-t border-slate-200 hover:bg-slate-50">
+                    <td className="px-6 py-4 font-medium text-slate-900">{site.ownerName || "—"}</td>
+                    <td className="px-6 py-4">{site.buildingRef || "—"}</td>
+                    <td className="px-6 py-4">{site.address || "—"}</td>
+                    <td className="px-6 py-4">{site.latitude ?? "—"}, {site.longitude ?? "—"}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        site.sync_status === "synced"
+                        site.syncStatus === "synced"
                           ? "bg-emerald-100 text-emerald-700"
-                          : site.sync_status === "syncing"
+                          : site.syncStatus === "syncing"
                             ? "bg-amber-100 text-amber-700"
                             : "bg-slate-200 text-slate-700"
                       }`}>
-                        {site.sync_status}
+                        {site.syncStatus}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {Object.entries(site.sections_status).map(([key, value]) => (
+                        {Object.entries(site.sectionsStatus).map(([key, value]) => (
                           <span
                             key={key}
                             className={`rounded-full px-2 py-1 text-[10px] font-medium ${

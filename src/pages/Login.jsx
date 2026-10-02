@@ -1,32 +1,34 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  getUsers,
-  isValidEmail,
-  normalizeEmail,
-  verifyCredentials,
-} from "../utils/auth";
+import { isValidEmail, normalizeEmail } from "../utils/auth";
+import { apiRequest } from "../utils/api";
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [awaitingOtp, setAwaitingOtp] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setEmail("");
     setPassword("");
+    setOtp("");
     setShowPassword(false);
     setError("");
+    setStatus("");
+    setAwaitingOtp(false);
   }, []);
 
   const handleLogin = async () => {
     const trimmedEmail = normalizeEmail(email);
-    const trimmedPassword = password.trim();
 
-    if (!trimmedEmail || !trimmedPassword) {
-      setError("All fields are required");
+    if (!trimmedEmail || (!awaitingOtp && !password) || (awaitingOtp && !otp.trim())) {
+      setError(awaitingOtp ? "Enter the verification code sent to your email" : "All fields are required");
       return;
     }
 
@@ -35,19 +37,33 @@ export default function Login() {
       return;
     }
 
-    const users = getUsers();
-    const result = await verifyCredentials(users, trimmedEmail, trimmedPassword);
-
-    if (!result.ok) {
-      setError(result.message);
-      setPassword("");
-      return;
-    }
-
-    localStorage.setItem("isAuth", "true");
-    localStorage.setItem("currentUser", JSON.stringify(result.user));
+    setIsSubmitting(true);
     setError("");
-    navigate("/dashboard");
+    try {
+      if (!awaitingOtp) {
+        const result = await apiRequest("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email: trimmedEmail, password }),
+        });
+        setAwaitingOtp(true);
+        setStatus(typeof result === "string" ? result : "A verification code was sent to your email.");
+        return;
+      }
+
+      await apiRequest("/auth/login/verify", {
+        method: "POST",
+        body: JSON.stringify({ email: trimmedEmail, otp: otp.trim() }),
+      });
+
+      localStorage.setItem("isAuth", "true");
+      localStorage.setItem("currentUser", JSON.stringify({ email: trimmedEmail }));
+      navigate("/dashboard");
+    } catch (requestError) {
+      setError(requestError.message || "Unable to sign in. Please try again.");
+      if (!awaitingOtp) setPassword("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   const backgrounds = [
     "/images/im1.jpg",
@@ -95,15 +111,19 @@ export default function Login() {
         {error && (
           <p className="text-red-600 text-sm mb-3 text-center">{error}</p>
         )}
+        {status && (
+          <p className="text-green-700 text-sm mb-3 text-center">{status}</p>
+        )}
         <div className="mb-3 text-left">
           <label htmlFor="email" className="block mb-1 font-semibold">
             Email:
           </label>
           <input
             type="email"
-            autoComplete="off"
+            autoComplete="username"
             name="email"
             placeholder="Enter your Email here..."
+            disabled={awaitingOtp || isSubmitting}
             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -116,14 +136,14 @@ export default function Login() {
           />
         </div>
 
-        <div className="mb-3 text-left">
+        {!awaitingOtp && <div className="mb-3 text-left">
           <label htmlFor="password" className="block mb-1 font-semibold">
             Password:
           </label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
+              autoComplete="current-password"
               name="password"
               placeholder="Enter your Password here..."
               className="w-full px-4 py-2 pr-11 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
@@ -144,7 +164,29 @@ export default function Login() {
               {showPassword ? "Hide" : "Show"}
             </button>
           </div>
-        </div>
+        </div>}
+
+        {awaitingOtp && (
+          <div className="mb-3 text-left">
+            <label htmlFor="login-otp" className="block mb-1 font-semibold">
+              Email verification code:
+            </label>
+            <input
+              id="login-otp"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="Enter the 6-digit code"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleLogin();
+              }}
+            />
+          </div>
+        )}
 
         <div className="mb-2">
           <input type="checkbox" name="tick" id="tick" className="me-2" />
@@ -167,9 +209,10 @@ export default function Login() {
         <button
           type="button"
           onClick={handleLogin}
+          disabled={isSubmitting}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg shadow-md transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Login
+          {isSubmitting ? "Please wait..." : awaitingOtp ? "Verify code" : "Login"}
         </button>
 
         <p className="text-center mt-4 text-sm">
