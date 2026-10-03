@@ -1,11 +1,10 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ReportWizard from "./pages/report/ReportWizard";
+import BackendReportGenerator from "./pages/BackendReportGenerator";
 import DatabaseTables from "./pages/DatabaseTables";
 import GeneratedReports from "./pages/GeneratedReports";
 
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 // import ReportForm from "./pages/ReportForm";
@@ -22,7 +21,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -32,7 +30,7 @@ function App() {
             <ProtectedRoute>
               <>
                 <Header />
-                <ReportWizard />
+                <BackendReportGenerator />
               </>
             </ProtectedRoute>
           }
@@ -43,7 +41,7 @@ function App() {
             <ProtectedRoute>
               <>
                 <Header />
-                <ReportWizard />
+                <BackendReportGenerator />
               </>
             </ProtectedRoute>
           }

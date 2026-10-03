@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { isValidEmail, normalizeEmail } from "../utils/auth";
 import { apiRequest } from "../utils/api";
 
@@ -215,12 +215,6 @@ export default function Login() {
           {isSubmitting ? "Please wait..." : awaitingOtp ? "Verify code" : "Login"}
         </button>
 
-        <p className="text-center mt-4 text-sm">
-          Do not have an account?{" "}
-          <Link to="/signup" className="text-blue-600">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
   );

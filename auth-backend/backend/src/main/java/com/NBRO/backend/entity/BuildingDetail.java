@@ -24,4 +24,11 @@ public class BuildingDetail {
     private Boolean leftSide;
     private Boolean rightSide;
     private Boolean rear;
+
+    public UUID getBuildingDetailId() { return buildingDetailId; }
+    public UUID getDetailTypeId() { return detailTypeId; }
+    public Boolean getFront() { return front; }
+    public Boolean getLeftSide() { return leftSide; }
+    public Boolean getRightSide() { return rightSide; }
+    public Boolean getRear() { return rear; }
 }

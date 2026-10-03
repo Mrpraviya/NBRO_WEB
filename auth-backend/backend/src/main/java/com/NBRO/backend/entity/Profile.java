@@ -1,5 +1,6 @@
 package com.NBRO.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -23,4 +24,25 @@ public class Profile {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    @JsonProperty("id")
+    public UUID getId() { return id; }
+
+    @JsonProperty("fullName")
+    public String getFullName() { return fullName; }
+
+    @JsonProperty("role")
+    public String getRole() { return role; }
+
+    @JsonProperty("isActive")
+    public Boolean getIsActive() { return isActive; }
+
+    @JsonProperty("mustChangePassword")
+    public Boolean getMustChangePassword() { return mustChangePassword; }
+
+    @JsonProperty("createdAt")
+    public Instant getCreatedAt() { return createdAt; }
+
+    @JsonProperty("updatedAt")
+    public Instant getUpdatedAt() { return updatedAt; }
 }

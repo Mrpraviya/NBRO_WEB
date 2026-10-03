@@ -18,4 +18,8 @@ public class DetailType {
 
     private UUID structureId;
     private String name;
+
+    public UUID getDetailTypeId() { return detailTypeId; }
+    public UUID getStructureId() { return structureId; }
+    public String getName() { return name; }
 }
