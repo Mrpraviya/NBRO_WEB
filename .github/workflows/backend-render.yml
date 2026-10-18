@@ -1,0 +1,90 @@
+name: Build and deploy backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "auth-backend/backend/**"
+      - ".github/workflows/backend-render.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "auth-backend/backend/**"
+      - ".github/workflows/backend-render.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: auth-backend/backend/pom.xml
+
+      - name: Run backend tests
+        working-directory: auth-backend/backend
+        run: mvn -B test
+
+  publish-and-deploy:
+    name: Publish image and deploy to Render
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Define lowercase GHCR image name
+        shell: bash
+        run: echo "IMAGE_NAME=ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: auth-backend/backend
+          file: auth-backend/backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trigger Render deployment
+        env:
+          IMAGE_URI: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL is not configured."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --get \
+            --data-urlencode "imgURL=$IMAGE_URI" \
+            "$RENDER_DEPLOY_HOOK_URL"
