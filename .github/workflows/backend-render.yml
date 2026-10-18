@@ -81,8 +81,8 @@ jobs:
           IMAGE_URI: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          if [ -z "$https://nbro-web-latest.onrender.com/" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL is not configured."
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL isn't configured."
             exit 1
           fi
           curl --fail-with-body --silent --show-error --get \
