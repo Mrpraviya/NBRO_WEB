@@ -21,4 +21,4 @@ ENV PORT=10000
 EXPOSE 10000
 USER app
 
-ENTRYPOINT ["sh", "-c", "exec java -XX:MaxRAMPercentage=75 -Dserver.port=${PORT:-10000} -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java -XX:MaxRAMPercentage=75 -Dserver.address=0.0.0.0 -Dserver.port=${PORT:-10000} -jar /app/app.jar"]
