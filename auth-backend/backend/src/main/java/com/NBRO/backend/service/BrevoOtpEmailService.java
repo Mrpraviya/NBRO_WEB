@@ -9,41 +9,44 @@ import org.springframework.web.client.RestClient;
 import java.util.Map;
 
 @Service
-@ConditionalOnProperty(prefix = "app.mail", name = "provider", havingValue = "resend", matchIfMissing = true)
-public class ResendOtpEmailService implements OtpEmailService {
+@ConditionalOnProperty(prefix = "app.mail", name = "provider", havingValue = "brevo", matchIfMissing = true)
+public class BrevoOtpEmailService implements OtpEmailService {
 
-    private final RestClient resendClient;
+    private final RestClient brevoClient;
     private final String apiKey;
     private final String fromAddress;
+    private final String fromName;
 
-    public ResendOtpEmailService(
+    public BrevoOtpEmailService(
             RestClient.Builder restClientBuilder,
-            @Value("${RESEND_API_KEY:}") String apiKey,
-            @Value("${MAIL_FROM:}") String fromAddress
+            @Value("${BREVO_API_KEY:}") String apiKey,
+            @Value("${MAIL_FROM:}") String fromAddress,
+            @Value("${MAIL_FROM_NAME:NBRO}") String fromName
     ) {
-        this.resendClient = restClientBuilder.baseUrl("https://api.resend.com").build();
+        this.brevoClient = restClientBuilder.baseUrl("https://api.brevo.com/v3").build();
         this.apiKey = apiKey;
         this.fromAddress = fromAddress;
+        this.fromName = fromName;
     }
 
     @Override
     public void sendOtp(String email, String otp) {
         if (apiKey.isBlank()) {
-            throw new IllegalStateException("RESEND_API_KEY is not configured");
+            throw new IllegalStateException("BREVO_API_KEY is not configured");
         }
         if (fromAddress.isBlank()) {
             throw new IllegalStateException("MAIL_FROM is not configured");
         }
 
-        resendClient.post()
-                .uri("/emails")
-                .header("Authorization", "Bearer " + apiKey)
+        brevoClient.post()
+                .uri("/smtp/email")
+                .header("api-key", apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of(
-                        "from", fromAddress,
-                        "to", new String[]{email},
+                        "sender", Map.of("name", fromName, "email", fromAddress),
+                        "to", new Object[]{Map.of("email", email)},
                         "subject", "Your NBRO verification code",
-                        "text", "Your verification code is " + otp + ". It expires in 5 minutes."
+                        "textContent", "Your verification code is " + otp + ". It expires in 5 minutes."
                 ))
                 .retrieve()
                 .toBodilessEntity();

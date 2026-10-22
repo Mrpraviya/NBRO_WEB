@@ -1,39 +1,39 @@
 package com.NBRO.backend.service;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
-import static org.springframework.http.HttpMethod.POST;
 
-class ResendOtpEmailServiceTests {
+class BrevoOtpEmailServiceTests {
 
     @Test
-    void sendsOtpThroughResendHttpsApi() {
-        RestClient.Builder builder = RestClient.builder().baseUrl("https://api.resend.com");
+    void sendsOtpThroughBrevoTransactionalEmailApi() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://api.brevo.com/v3");
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        ResendOtpEmailService emailService = new ResendOtpEmailService(
+        BrevoOtpEmailService emailService = new BrevoOtpEmailService(
                 builder,
                 "test-api-key",
-                "NBRO <onboarding@resend.dev>"
+                "otp@example.com",
+                "NBRO"
         );
-        server.expect(requestTo("https://api.resend.com/emails"))
+        server.expect(requestTo("https://api.brevo.com/v3/smtp/email"))
                 .andExpect(method(POST))
-                .andExpect(header(HttpHeaders.AUTHORIZATION, "Bearer test-api-key"))
+                .andExpect(header("api-key", "test-api-key"))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("""
                         {
-                          "from": "NBRO <onboarding@resend.dev>",
-                          "to": ["recipient@example.com"],
+                          "sender": {"name": "NBRO", "email": "otp@example.com"},
+                          "to": [{"email": "recipient@example.com"}],
                           "subject": "Your NBRO verification code",
-                          "text": "Your verification code is 123456. It expires in 5 minutes."
+                          "textContent": "Your verification code is 123456. It expires in 5 minutes."
                         }
                         """))
                 .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));

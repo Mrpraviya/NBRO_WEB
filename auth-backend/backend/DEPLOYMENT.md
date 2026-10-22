@@ -21,10 +21,10 @@ asks Render to deploy that exact commit-specific image.
 4. Set the service's runtime environment variables in Render. At minimum,
    configure `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and
    `SPRING_DATASOURCE_PASSWORD` with the production database credentials. OTP
-   email uses the Resend HTTPS API by default; configure `MAIL_PROVIDER=resend`,
-   `RESEND_API_KEY`, and `MAIL_FROM`. Verify the sender domain/address with
-   Resend first. Its test sender (`onboarding@resend.dev`) can only deliver to
-   the Resend account owner's address. To use SMTP instead, set
+   email uses Brevo's HTTPS API by default; configure `MAIL_PROVIDER=brevo`,
+   `BREVO_API_KEY`, `MAIL_FROM`, and optionally `MAIL_FROM_NAME`. Verify the
+   sender email address in Brevo first; a paid custom domain is not required to
+   verify an individual sender address. To use SMTP instead, set
    `MAIL_PROVIDER=smtp` and configure `MAIL_USERNAME` and `MAIL_PASSWORD`;
    Render's free tier blocks outbound SMTP ports. Keep credentials out of
    Docker build arguments and source control.
