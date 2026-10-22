@@ -62,16 +62,17 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow();
 
-        if (!user.getOtp().equals(otp)) {
+        if (user.getOtp() == null || !user.getOtp().equals(otp)) {
             throw new RuntimeException("Invalid OTP");
         }
 
-        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+        if (user.getOtpExpiry() == null || user.getOtpExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("OTP expired");
         }
 
         user.setVerified(true);
         user.setOtp(null);
+        user.setOtpExpiry(null);
         userRepository.save(user);
 
         return "Account verified!";
@@ -104,9 +105,17 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow();
 
-        if (!otp.equals(user.getOtp())) {
+        if (otp == null || user.getOtp() == null || !otp.equals(user.getOtp())) {
             throw new RuntimeException("Invalid OTP");
         }
+
+        if (user.getOtpExpiry() == null || user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("OTP expired");
+        }
+
+        user.setOtp(null);
+        user.setOtpExpiry(null);
+        userRepository.save(user);
 
         return "Login successful (Generate JWT here)";
     }
