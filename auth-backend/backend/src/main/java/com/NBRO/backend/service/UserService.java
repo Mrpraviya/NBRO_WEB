@@ -2,49 +2,60 @@ package com.NBRO.backend.service;
 
 import com.NBRO.backend.entity.User;
 import com.NBRO.backend.repository.UserRepository;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.mail.SimpleMailMessage;
 
 import java.time.LocalDateTime;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 public class UserService {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
+    private final OtpEmailService otpEmailService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JavaMailSender mailSender) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            OtpEmailService otpEmailService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.mailSender = mailSender;
+        this.otpEmailService = otpEmailService;
     }
 
     public String signup(String email, String password) {
         if (email == null || password == null) {
             throw new IllegalArgumentException("Email or password is missing");
         }
-        if (userRepository.findByEmail(email).isPresent()) {
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        boolean resendingVerification = user != null && !user.isVerified();
+        if (user != null && !resendingVerification) {
             throw new RuntimeException("User already exists");
         }
 
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setVerified(false);
+        if (user == null) {
+            user = new User();
+            user.setEmail(email);
+            user.setPassword(passwordEncoder.encode(password));
+            user.setVerified(false);
+        }
 
-        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
+        String otp = generateOtp();
         user.setOtp(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
 
         userRepository.save(user);
 
-        sendOtp(email, otp);
+        otpEmailService.sendOtp(email, otp);
 
-        return "User registered. Verify OTP.";
+        return resendingVerification
+                ? "Verification code resent."
+                : "User registered. Verify OTP.";
     }
 
     public String verifyOtp(String email, String otp) {
@@ -79,12 +90,12 @@ public class UserService {
         }
 
         // Step 2 OTP
-        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
+        String otp = generateOtp();
         user.setOtp(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
         userRepository.save(user);
 
-        sendOtp(email, otp);
+        otpEmailService.sendOtp(email, otp);
 
         return "OTP sent for login";
     }
@@ -100,12 +111,7 @@ public class UserService {
         return "Login successful (Generate JWT here)";
     }
 
-    private void sendOtp(String email, String otp) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Your OTP");
-        message.setText("Your OTP is: " + otp);
-
-        mailSender.send(message);
+    private String generateOtp() {
+        return String.valueOf(SECURE_RANDOM.nextInt(900000) + 100000);
     }
 }
