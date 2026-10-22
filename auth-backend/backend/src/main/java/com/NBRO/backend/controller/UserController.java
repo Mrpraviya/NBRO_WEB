@@ -3,6 +3,7 @@ package com.NBRO.backend.controller;
 import com.NBRO.backend.dto.SignupRequest;
 import com.NBRO.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin
 public class UserController {
 
     private final UserService authService;

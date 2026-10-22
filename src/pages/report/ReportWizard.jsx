@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import { z } from "zod";
+import { apiUrl } from "../../utils/api";
 
-const backendPort = import.meta.env.VITE_BACKEND_PORT || '4000';
 const API_KEY = import.meta.env.VITE_API_KEY || null;
 /* ================= STORAGE ================= */
 let _lf = null;
@@ -71,7 +71,7 @@ export default function ReportWizard() {
 
   async function fetchReportToEdit() {
     try {
-      const res = await fetch(`http://localhost:${backendPort}/api/reports`);
+      const res = await fetch(apiUrl("/reports"));
       if (!res.ok) throw new Error("Failed to fetch reports");
       const reports = await res.json();
       const report = reports.find((r) => r.id === Number(editId));
@@ -204,8 +204,8 @@ export default function ReportWizard() {
 
     try {
       const url = isEditing
-        ? `http://localhost:${backendPort}/api/reports/${editId}`
-        : `http://localhost:${backendPort}/api/reports`;
+        ? apiUrl(`/reports/${editId}`)
+        : apiUrl("/reports");
       
       const method = isEditing ? "PUT" : "POST";
       const headers = { "Content-Type": "application/json" };

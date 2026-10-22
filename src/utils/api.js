@@ -1,4 +1,12 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const defaultApiBaseUrl = import.meta.env.DEV
+  ? "/api"
+  : "https://nbro-web-latest.onrender.com/api";
+const API_BASE_URL = (
+  /^https?:\/\//i.test(configuredApiBaseUrl || "")
+    ? configuredApiBaseUrl
+    : defaultApiBaseUrl
+).replace(/\/$/, "");
 
 export function apiUrl(path) {
   return `${API_BASE_URL}/${String(path).replace(/^\//, "")}`;

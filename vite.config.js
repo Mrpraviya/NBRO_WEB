@@ -15,8 +15,13 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: env.VITE_BACKEND_URL || 'http://localhost:8080',
+          target: env.VITE_BACKEND_URL || 'https://nbro-web-latest.onrender.com',
           changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin')
+            })
+          },
         },
       },
     },

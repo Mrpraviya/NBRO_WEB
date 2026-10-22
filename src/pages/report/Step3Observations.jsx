@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 import { useRef } from "react";
-
-const backendPort = import.meta.env.VITE_BACKEND_PORT || '4000';
+import { apiUrl } from "../../utils/api";
 
 export default function Step3Observations({
   data,
@@ -17,7 +16,7 @@ export default function Step3Observations({
 
   const uploadFile = (file, onProgress) => {
     return new Promise((resolve, reject) => {
-      const uploadUrl = `http://localhost:${backendPort}/api/upload`;
+      const uploadUrl = apiUrl("/upload");
 
       const xhr = new XMLHttpRequest();
       const fd = new FormData();
@@ -113,7 +112,7 @@ export default function Step3Observations({
         if (filename) {
           const API_KEY = import.meta.env.VITE_API_KEY || null;
           const reportQuery = data && data.id ? `?reportId=${data.id}` : '';
-          fetch(`http://localhost:${backendPort}/api/uploads/${filename}${reportQuery}`, { 
+          fetch(apiUrl(`/uploads/${filename}${reportQuery}`), {
             method: 'DELETE',
             headers: API_KEY ? { 'x-api-key': API_KEY } : {}
           })
