@@ -22,7 +22,7 @@ public class UserController {
 
     private final UserService authService;
 
-    @Value("${app.frontend.base-url:http://localhost:5173}")
+    @Value("${app.frontend.base-url:https://nbro-web.vercel.app}")
     private String frontendBaseUrl;
 
     public UserController(UserService authService) {

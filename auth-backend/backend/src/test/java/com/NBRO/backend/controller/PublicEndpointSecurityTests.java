@@ -79,7 +79,7 @@ class PublicEndpointSecurityTests {
                         "{\"message\":\"If an account exists for that email, a password reset link has been sent.\"}"
                 ));
 
-        verify(userService).requestPasswordReset("test@example.com", "http://localhost:5173");
+        verify(userService).requestPasswordReset("test@example.com", "https://nbro-web.vercel.app");
     }
 
     @Test
