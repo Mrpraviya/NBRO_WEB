@@ -23,4 +23,14 @@ public class SmtpOtpEmailService implements OtpEmailService {
         message.setText("Your verification code is " + otp + ". It expires in 5 minutes.");
         mailSender.send(message);
     }
+
+    @Override
+    public void sendPasswordResetLink(String email, String resetLink) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Reset your NBRO password");
+        message.setText("Use this link to reset your NBRO password. It expires in 30 minutes: "
+                + resetLink);
+        mailSender.send(message);
+    }
 }

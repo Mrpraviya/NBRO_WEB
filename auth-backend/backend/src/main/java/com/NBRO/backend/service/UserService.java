@@ -2,11 +2,15 @@ package com.NBRO.backend.service;
 
 import com.NBRO.backend.entity.User;
 import com.NBRO.backend.repository.UserRepository;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.security.SecureRandom;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 @Service
 public class UserService {
@@ -80,10 +84,10 @@ public class UserService {
 
     public String login(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow();
+                .orElseThrow(InvalidCredentialsException::new);
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+        if (password == null || !passwordEncoder.matches(password, user.getPassword())) {
+            throw new InvalidCredentialsException();
         }
 
         if (!user.isVerified()) {
@@ -99,6 +103,49 @@ public class UserService {
         otpEmailService.sendOtp(email, otp);
 
         return "OTP sent for login";
+    }
+
+    public void requestPasswordReset(String email, String frontendBaseUrl) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+
+        userRepository.findByEmail(email)
+                .filter(User::isVerified)
+                .ifPresent(user -> {
+                    String token = generateResetToken();
+                    user.setOtp(hashResetToken(token));
+                    user.setOtpExpiry(LocalDateTime.now().plusMinutes(30));
+                    userRepository.save(user);
+
+                    String resetLink = UriComponentsBuilder.fromUriString(frontendBaseUrl.replaceAll("/+$", ""))
+                            .path("/reset-password")
+                            .queryParam("token", token)
+                            .build()
+                            .encode()
+                            .toUriString();
+                    otpEmailService.sendPasswordResetLink(email, resetLink);
+                });
+    }
+
+    public void resetPassword(String token, String password) {
+        if (token == null || token.isBlank() || password == null || password.isBlank()) {
+            throw new InvalidPasswordResetTokenException();
+        }
+
+        User user = userRepository.findByOtp(hashResetToken(token))
+                .orElseThrow(InvalidPasswordResetTokenException::new);
+        if (user.getOtpExpiry() == null || user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            user.setOtp(null);
+            user.setOtpExpiry(null);
+            userRepository.save(user);
+            throw new InvalidPasswordResetTokenException();
+        }
+
+        user.setPassword(passwordEncoder.encode(password));
+        user.setOtp(null);
+        user.setOtpExpiry(null);
+        userRepository.save(user);
     }
 
     public String verifyLoginOtp(String email, String otp) {
@@ -122,5 +169,20 @@ public class UserService {
 
     private String generateOtp() {
         return String.valueOf(SECURE_RANDOM.nextInt(900000) + 100000);
+    }
+
+    private String generateResetToken() {
+        byte[] token = new byte[32];
+        SECURE_RANDOM.nextBytes(token);
+        return HexFormat.of().formatHex(token);
+    }
+
+    private String hashResetToken(String token) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
     }
 }

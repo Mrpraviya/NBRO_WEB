@@ -1,6 +1,7 @@
 package com.NBRO.backend.controller;
 
 import com.NBRO.backend.config.SecurityConfig;
+import com.NBRO.backend.service.InvalidCredentialsException;
 import com.NBRO.backend.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,31 @@ class PublicEndpointSecurityTests {
                         .header("Access-Control-Request-Headers", "content-type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "*"));
+    }
+
+    @Test
+    void loginReturnsRequestedMessageForIncorrectCredentials() throws Exception {
+        when(userService.login("test@example.com", "invalid"))
+                .thenThrow(new InvalidCredentialsException());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"test@example.com\",\"password\":\"invalid\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json("{\"message\":\"Username , Password is incorrect\"}"));
+    }
+
+    @Test
+    void forgotPasswordIsPublicAndDoesNotDiscloseWhetherAccountExists() throws Exception {
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"test@example.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(
+                        "{\"message\":\"If an account exists for that email, a password reset link has been sent.\"}"
+                ));
+
+        verify(userService).requestPasswordReset("test@example.com", "http://localhost:5173");
     }
 
     @Test

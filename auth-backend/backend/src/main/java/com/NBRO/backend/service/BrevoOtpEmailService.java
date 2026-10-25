@@ -51,4 +51,28 @@ public class BrevoOtpEmailService implements OtpEmailService {
                 .retrieve()
                 .toBodilessEntity();
     }
+
+    @Override
+    public void sendPasswordResetLink(String email, String resetLink) {
+        if (apiKey.isBlank()) {
+            throw new IllegalStateException("BREVO_API_KEY is not configured");
+        }
+        if (fromAddress.isBlank()) {
+            throw new IllegalStateException("MAIL_FROM is not configured");
+        }
+
+        brevoClient.post()
+                .uri("/smtp/email")
+                .header("api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of(
+                        "sender", Map.of("name", fromName, "email", fromAddress),
+                        "to", new Object[]{Map.of("email", email)},
+                        "subject", "Reset your NBRO password",
+                        "textContent", "Use this link to reset your NBRO password. It expires in 30 minutes: "
+                                + resetLink
+                ))
+                .retrieve()
+                .toBodilessEntity();
+    }
 }

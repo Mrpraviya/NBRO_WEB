@@ -42,4 +42,36 @@ class BrevoOtpEmailServiceTests {
 
         server.verify();
     }
+
+    @Test
+    void sendsPasswordResetLinkThroughBrevoTransactionalEmailApi() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://api.brevo.com/v3");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        BrevoOtpEmailService emailService = new BrevoOtpEmailService(
+                builder,
+                "test-api-key",
+                "otp@example.com",
+                "NBRO"
+        );
+        server.expect(requestTo("https://api.brevo.com/v3/smtp/email"))
+                .andExpect(method(POST))
+                .andExpect(header("api-key", "test-api-key"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("""
+                        {
+                          "sender": {"name": "NBRO", "email": "otp@example.com"},
+                          "to": [{"email": "recipient@example.com"}],
+                          "subject": "Reset your NBRO password",
+                          "textContent": "Use this link to reset your NBRO password. It expires in 30 minutes: https://nbro.example/reset-password?token=abc123"
+                        }
+                        """))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+        emailService.sendPasswordResetLink(
+                "recipient@example.com",
+                "https://nbro.example/reset-password?token=abc123"
+        );
+
+        server.verify();
+    }
 }

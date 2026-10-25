@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -132,5 +133,86 @@ class UserServiceTests {
 
         assertFalse(user.isVerified());
         verify(userRepository, never()).save(user);
+    }
+
+    @Test
+    void loginUsesSameErrorForUnknownEmailAndWrongPassword() {
+        UserService userService = new UserService(userRepository, passwordEncoder, otpEmailService);
+        User user = new User();
+        user.setPassword("encoded-password");
+
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong-password", "encoded-password")).thenReturn(false);
+
+        InvalidCredentialsException missingUser = assertThrows(
+                InvalidCredentialsException.class,
+                () -> userService.login("missing@example.com", "password")
+        );
+        InvalidCredentialsException wrongPassword = assertThrows(
+                InvalidCredentialsException.class,
+                () -> userService.login("user@example.com", "wrong-password")
+        );
+
+        assertEquals("Username , Password is incorrect", missingUser.getMessage());
+        assertEquals(missingUser.getMessage(), wrongPassword.getMessage());
+    }
+
+    @Test
+    void passwordResetRequestSendsExpiringLinkAndStoresOnlyTokenHash() {
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setVerified(true);
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        UserService userService = new UserService(userRepository, passwordEncoder, otpEmailService);
+
+        userService.requestPasswordReset("user@example.com", "https://nbro.example");
+
+        ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
+        verify(otpEmailService).sendPasswordResetLink(eq("user@example.com"), linkCaptor.capture());
+        String resetLink = linkCaptor.getValue();
+        assertTrue(resetLink.startsWith("https://nbro.example/reset-password?token="));
+        String token = resetLink.substring(resetLink.indexOf("token=") + 6);
+        assertEquals(64, token.length());
+        assertTrue(user.getOtp().matches("[0-9a-f]{64}"));
+        assertFalse(user.getOtp().equals(token));
+        assertTrue(user.getOtpExpiry().isAfter(LocalDateTime.now()));
+        assertTrue(user.getOtpExpiry().isBefore(LocalDateTime.now().plusMinutes(31)));
+    }
+
+    @Test
+    void resetPasswordUpdatesPasswordAndConsumesToken() {
+        User user = new User();
+        user.setOtp("hashed-reset-token");
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        when(userRepository.findByOtp(anyString())).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("new-password")).thenReturn("encoded-new-password");
+        UserService userService = new UserService(userRepository, passwordEncoder, otpEmailService);
+
+        userService.resetPassword("reset-token", "new-password");
+
+        assertEquals("encoded-new-password", user.getPassword());
+        assertNull(user.getOtp());
+        assertNull(user.getOtpExpiry());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void resetPasswordRejectsExpiredTokenAndConsumesIt() {
+        User user = new User();
+        user.setOtp("hashed-reset-token");
+        user.setOtpExpiry(LocalDateTime.now().minusSeconds(1));
+        when(userRepository.findByOtp(anyString())).thenReturn(Optional.of(user));
+        UserService userService = new UserService(userRepository, passwordEncoder, otpEmailService);
+
+        assertThrows(
+                InvalidPasswordResetTokenException.class,
+                () -> userService.resetPassword("reset-token", "new-password")
+        );
+
+        assertNull(user.getOtp());
+        assertNull(user.getOtpExpiry());
+        verify(userRepository).save(user);
+        verify(passwordEncoder, never()).encode(anyString());
     }
 }
